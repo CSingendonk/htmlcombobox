@@ -318,10 +318,10 @@ const createCustomSelectInput = () => {
         }
     }
 
-    if (!customElements.get('custom-select-input')) {
-        customElements.define('custom-select-input', CustomSelectInput);
+    if (!customElements.get('combo-box')) {
+        customElements.define('combo-box', CustomSelectInput);
     }
-    return document.createElement('custom-select-input');
+    return document.createElement('combo-box');
 };
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
