@@ -67,7 +67,7 @@ class CustomSelectInput extends HTMLElement {
         this.#dropdown?.addEventListener('keydown', this.#handleTextInput.bind(this));
         this.#dropdown?.addEventListener('change', this.#handleSelectChange.bind(this));
         this.#dropdown?.addEventListener('focus', this.#handleFocus.apply(this));
-        this.#textbox.addEventListener('click', this.#handleDblClick.bind(this));
+        this.addEventListener('click', this.#handleDblClick.bind(this));
     }
 
     #cleanupEventListeners() {
@@ -86,7 +86,7 @@ class CustomSelectInput extends HTMLElement {
     height: 1.5rem;
     contain: strict;
     position: initial;
-    color: red;
+    color: black;
     border: 2px groove #000;
     background-color: #fff
 }
@@ -298,39 +298,33 @@ border-radius: 50%;
         t2.style.boxShadow = 'initial';
     }
 
-    #firstclick = null;
-    #secondclick = null;
+    #lastClick = 0;
+
     #showList = () => HTMLSelectElement.prototype.showPicker.bind(this.#dropdown);
 
     #handleDblClick(e = { target: this.#dropdown }) {
-        const reset = () => {
-            this.firstclick = null;
-            this.secondclick = null;
-        };
-        this.firstclick = this.firstclick || Date.now();
-        if (this.firstclick != null && this.firstclick + 250 > Date.now()) {
-            this.secondclick = Date.now();
+        const now = Date.now();
+        const isDoubleClick = this.#lastClick && (now - this.#lastClick < 250);
+        this.#lastClick = now;
+
+        if (isDoubleClick) {
+            try {
+                this.#dropdown.showPicker();
+            } catch {
+                try {
+                    this.#showList.call(this.#dropdown);
+                } catch {
+                    try {
+                        this.#dropdown.click();
+                    } catch {
+                        this.#dropdown.focus();
+                    }
+                }
+            }
+            this.#lastClick = null;
+            return;
         }
-        if (this.secondclick != null && this.secondclick - this.firstclick < 250) {
-           try {
-            this.#dropdown.showPicker();
-            reset();
-            return;
-           } catch (error) {
-            this.#showList.call(this.#dropdown);
-            reset();
-            return;
-           }
-           try {
-            this.#dropdown.click();
-            reset();
-            return;
-           } catch (error) {
-            this.#dropdown.focus();
-            reset();
-            return;
-           }
-        }
+        
         e.target.showPicker();
     }
 
@@ -499,6 +493,9 @@ border-radius: 50%;
             this.style[property] = value;
         }
     }
+
+    static createComboInput = (() => { return document.createElement('combo-input'); })();
+
 }
 
 customElements.define('combo-input', CustomSelectInput);
