@@ -67,6 +67,7 @@ class CustomSelectInput extends HTMLElement {
         this.#dropdown?.addEventListener('keydown', this.#handleTextInput.bind(this));
         this.#dropdown?.addEventListener('change', this.#handleSelectChange.bind(this));
         this.#dropdown?.addEventListener('focus', this.#handleFocus.apply(this));
+        this.#textbox.addEventListener('click', this.#handleDblClick.bind(this));
     }
 
     #cleanupEventListeners() {
@@ -295,6 +296,42 @@ border-radius: 50%;
         t2.style.border = 'initial';
         t2.style.outline = 'initial';
         t2.style.boxShadow = 'initial';
+    }
+
+    #firstclick = null;
+    #secondclick = null;
+    #showList = () => HTMLSelectElement.prototype.showPicker.bind(this.#dropdown);
+
+    #handleDblClick(e = { target: this.#dropdown }) {
+        const reset = () => {
+            this.firstclick = null;
+            this.secondclick = null;
+        };
+        this.firstclick = this.firstclick || Date.now();
+        if (this.firstclick != null && this.firstclick + 250 > Date.now()) {
+            this.secondclick = Date.now();
+        }
+        if (this.secondclick != null && this.secondclick - this.firstclick < 250) {
+           try {
+            this.#dropdown.showPicker();
+            reset();
+            return;
+           } catch (error) {
+            this.#showList.call(this.#dropdown);
+            reset();
+            return;
+           }
+           try {
+            this.#dropdown.click();
+            reset();
+            return;
+           } catch (error) {
+            this.#dropdown.focus();
+            reset();
+            return;
+           }
+        }
+        e.target.showPicker();
     }
 
     #updateValue(value) {
