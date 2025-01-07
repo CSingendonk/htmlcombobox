@@ -1,9 +1,9 @@
 ```html
-<script src="https://raw.githubusercontent.com/CSingendonk/htmlcombobox/refs/heads/main/combobox.js"></script>
+<script src="https://csingendonk.github.io/lua/comboinput.js"></script>
 ```
 
 ```javascript
-<element>.appendChild(CustomSelectInput(createComboBox());
+CustomSelectInput.createComboInput());
 ```
 ![image](https://github.com/user-attachments/assets/8c469692-e5db-429b-89b6-9ce9037bbe11)
 
