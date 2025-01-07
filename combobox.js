@@ -6,23 +6,24 @@ class CustomSelectInput extends HTMLElement {
             value: '',
             options: [],
             placeholder: '',
-            selectionMode: 'single'
+            selectionMode: 'single',
+            selections: [],
+            innerstyles: '',
         };
         this.textbox = this.#textbox;
         this.dropdown = this.#dropdown;
         this.announcementRegion = null;
+        this.#contextMenu = null;
     }
-
+    #shadow;
     #textbox = (() => { return this.textbox; })();
     #dropdown = (() => { return this.dropdown; })();
-
     static get observedAttributes() {
-        return ['data-placeholder', 'data-options', 'data-value', 'data-selection-mode'];
+        return ['data-placeholder', 'data-options', 'data-value', 'data-selection-mode', 'data-style'];
     }
-#shadow;
+
 
     connectedCallback() {
-
         this.#render();
         this.#initializeState();
         this.#initializeAttributes();
@@ -34,7 +35,7 @@ class CustomSelectInput extends HTMLElement {
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
-        if (oldValue === newValue || (!oldValue || !newValue || !name) || (name != 'data-options' || name != 'data-placeholder' || name != "data-value" || name != 'data-selection-mode')) return;
+        if (oldValue === newValue || (!oldValue && !newValue) || !name) return;
         const handlers = {
             'data-value': () => this.#updateValue(newValue),
             'data-options': () => {
@@ -42,11 +43,54 @@ class CustomSelectInput extends HTMLElement {
                 this.#syncOptionsWithSelect();
             },
             'data-placeholder': () => this.#updatePlaceholder(newValue),
-            'data-selection-mode': () => this.#updateSelectionMode(newValue)
+            'data-selection-mode': () => this.#updateSelectionMode(newValue),
+            'data-style': () => this.#updateStyles(newValue)
         };
         handlers[name]?.();
     }
 
+    #updateStyles(dataStyles) {
+        try {
+            const styleRules = JSON.parse(dataStyles);
+            if (!Array.isArray(styleRules)) return false;
+
+            styleRules.forEach(([selector, styles]) => {
+                if (!selector || !styles) return;
+                
+                const elements = selector === 'this' 
+                    ? [this] 
+                    : Array.from(this.#shadow.querySelectorAll(selector));
+
+                elements.forEach(element => {
+                    if (typeof styles === 'string') {
+                        const styleObj = {};
+                        styles.split(';')
+                            .filter(style => style.trim())
+                            .forEach(style => {
+                                const [prop, value] = style.split(':').map(s => s.trim());
+                                if (prop && value) {
+                                    styleObj[prop] = value;
+                                }
+                            });
+                        this.#applyStyles(element, styleObj);
+                    } else if (typeof styles === 'object') {
+                        this.#applyStyles(element, styles);
+                    }
+                });
+            });
+            return true;
+        } catch (error) {
+            console.error('Error parsing styles:', error);
+            return false;
+        }
+    }
+
+    #applyStyles(element, styles) {
+        if (!element || !styles) return;
+        Object.entries(styles).forEach(([property, value]) => {
+            element.style[property] = value;
+        });
+    }
     #initializeState() {
         this.#textbox = this.#shadow.querySelector('input');
         this.#dropdown = this.#shadow.querySelector('select');
@@ -58,6 +102,7 @@ class CustomSelectInput extends HTMLElement {
         this.state.options = this.#parseOptions(this.getAttribute('data-options'));
         this.state.value = this.getAttribute('data-value') || '';
         this.state.selectionMode = this.getAttribute('data-selection-mode') || 'single';
+        this.state.innerstyles = this.getAttribute('data-style') || '[["this":"{color":"black";}]]';
         this.#updateUI();
     }
 
@@ -67,120 +112,29 @@ class CustomSelectInput extends HTMLElement {
         this.#dropdown?.addEventListener('keydown', this.#handleTextInput.bind(this));
         this.#dropdown?.addEventListener('change', this.#handleSelectChange.bind(this));
         this.#dropdown?.addEventListener('focus', this.#handleFocus.apply(this));
-        this.addEventListener('click', this.#handleDblClick.bind(this));
+        this.addEventListener('dblclick', this.#handleDblClick.bind(this));
+        this.addEventListener('contextmeu', this.#handleRightClick.bind(this));
+        this.#textbox.addEventListener('contextmenu', this.#handleRightClick.bind(this));
+
     }
 
     #cleanupEventListeners() {
         this.#textbox?.removeEventListener('input', this.#handleTextInput);
         this.#textbox?.removeEventListener('keydown', this.#handleKeyPress);
+        this.#textbox.removeEventListener('contextmenu', this.#handleRightClick);
+
+        this.#dropdown.removeEventListener('keydown', this.#handleTextInput);
         this.#dropdown?.removeEventListener('change', this.#handleSelectChange);
+        this.#dropdown?.removeEventListener('focus', this.#handleFocus);
+        
+        this.removeEventListener('dblclick', this.#handleDblClick);
+        this.removeEventListener('contextmenu', this.#handleRightClick);
     }
 
     #render() {
-        const template = `
-
-<style>
-:host {
-    display: inline-block;
-    width: 200px;
-    height: 1.5rem;
-    contain: strict;
-    position: initial;
-    color: black;
-    border: 2px groove #000;
-    background-color: #fff
-}
-* {
-    background-color: #282c34;
-    color: #fff;
-    font-family: 'Arial', sans-serif;
-    font-size: 14px;
-    line-height: 1.25rem;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    box-sizing: border-box;
-    min-height: 1.5rem;
-}
-input, select {
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 0.25rem;
-    position: absolute;
-    left: 0;
-    top: 0;
-    float: left;
-    position: relative;
-    clear: none;
-    z-index: 1;
-}
-select {
-    width: fit-coontent;
-    height: 2rem;
-    max-height: 0px;
-    overflow: hidden;
-    z-index: 0;
-}
-input {
-    width: 90%;
-    z-index: 9999999999;
-    position: absolute;
-    float: left;
-    clear: none;
-    bottom: 0;
-    right: 10%;
-}
-option {
-    
-}
-
-div, div * {
-    height: 100%;
-} 
-
-div {
-    padding: 0px;
-    min-height: 100%;
-}
-    div:nth-child(2) > select:nth-child(1) {
-    top: 0;
-    bottom:0;
-border: initial;
-outline: initial;
-box-shadow: initial;
-}
-:host * {
-background-color: inherit;
-color: inherit;
-font-family: inherit;
-font-size: inherit;
-line-height: inherit;
-margin: 0;
-border: none;
-border-radius: 0;
-}
-select {
-color: transparent;
-background-color: transparent;
-}
-option {
-border: 1px solid black;
-border-radius: 50%;
-}
-
-
-
-
-</style>
-<div>
-<select style="top: 0px;"><option value=""></option><option value="fuck">fuck</option><option value="fuckit">fuckit</option><option value="it">]</option></select>
-<input type="text" placeholder="Type/Select an option" style="width: 90%;z-index: 9999999999;position: absolute;float: left;clear: none;bottom: 0;right: 10%;">
-
-</div>
-`;
+        const template = `<style>:host {display: inline-block;width: 200px;height: 1.5rem;contain: strict;position: initial;color: black;border: 2px groove #000;background-color: #fff}* {background-color: #282c34;color: #fff;font-family: 'Arial', sans-serif;font-size: 14px;line-height: 1.25rem;margin: 0;padding: 0;width: 100%;box-sizing: border-box;min-height: 1.5rem;}input, select {border: 1px solid #555;border-radius: 4px;padding: 0.25rem;position: absolute;left: 0;top: 0;float: left;position: relative;clear: none;z-index: 1;}select {width: fit-coontent;height: 2rem;max-height: 0px;overflow: hidden;z-index: 0;}input {width: 90%;z-index: 9999999999;position: absolute;float: left;clear: none;bottom: 0;right: 10%;}option {}div, div * {height: 100%;} div {padding: 0px;min-height: 100%;}div:nth-child(2) > select:nth-child(1) {top: 0;bottom:0;border: initial;outline: initial;box-shadow: initial;}:host * {background-color: inherit;color: inherit;font-family: inherit;font-size: inherit;line-height: inherit;margin: 0;border: none;border-radius: 0;}select {color: transparent;background-color: transparent;}option {border: 1px solid black;border-radius: 50%;}</style><div><select style="top: 0px;"><option value=""></option><option value="fuck">fuck</option><option value="fuckit">fuckit</option><option value="it">]</option></select><input type="text" placeholder="Type/Select an option" style="width: 90%;z-index: 9999999999;position: absolute;float: left;clear: none;bottom: 0;right: 10%;"></div>`;
         this.#shadow.innerHTML = template;
         this.style.padding = '0px';
-
         this.#initializeState();
     }
 
@@ -197,49 +151,92 @@ border-radius: 50%;
         this.#syncOptionsWithSelect();
     }
 
+
+
     #parseOptions(optionsData) {
         if (!optionsData || !(typeof optionsData == 'string' && optionsData?.length > 0)) return this.#getDefaultOptions();
         try {
-            return optionsData
+            if (optionsData.startsWith('[{')) {
+                const parsedOptions = JSON.parse(optionsData);
+                return parsedOptions.map(opt => {
+                    if (!opt.value && !opt.text) {
+                        return { value: '', text: '' };
+                    }
+                    if (!opt.value && opt.text) {
+                        return { value: opt.text, text: opt.text };
+                    }
+                    if (!opt.text && opt.value) {
+                        return { value: opt.value, text: opt.value };
+                    }
+                    return { value: opt.value, text: opt.text };
+                });
+            }
+            let od = optionsData
                 .trim()
                 .replace(/^[\[\]]/g, '')
                 .split(',')
                 .map(opt => {
-                    const [value, text] = opt.includes(':')
-                        ? opt.split(':').map(part => part.trim().replace(/'/g, ''))
-                        : [opt.trim(), opt.trim()];
-                    return { value, text };
+                    const parts = opt.trim().split(':').map(part => 
+                        part.trim()
+                            .replace(/^['"]|['"]$/g, '') // Remove quotes at start/end
+                            .replace(/[\[\]]/g, '') // Remove any brackets
+                            .replace(/^[\s]*$/, '') // Handle empty or whitespace-only parts
+                    );
+                    
+                    if (parts.length === 1) {
+                        const value = parts[0];
+                        return { value: value || '', text: value || '' };
+                    }
+                    
+                    const [value, text] = parts;
+                    if (!value && text) {
+                        return { value: text, text: text };
+                    }
+                    return { value: value || text || '', text: text || value || '' };
                 });
+                od.forEach(o => {
+                    if (o.value) {
+                        o.value = o.value
+                            .replace(/[\[\]]/g, '')
+                            .replace(/['"]/g, '');
+                    }
+                    if (o.text) {
+                        o.text = o.text
+                            .replace(/[\[\]]/g, '')
+                            .replace(/['"]/g, '');
+                    }
+                });
+                return od;
         } catch {
             return this.#getDefaultOptions();
         }
-    }
-
+    }    
     #getDefaultOptions() {
         if ((this.getAttribute('data-options') == null || this.getAttribute('data-options') == '' || this.getAttribute('data-options') == '[]' || this.getAttribute('data-options') == '""') || !this.getAttribute('data-options')) {
-            this.setAttribute('data-options', '[ : ]');
-            return [
-                { value: '', text: '' },
-                { value: 'Option1', text: 'Option 1' },
-                { value: 'Option2', text: 'Option 2' },
-                { value: 'Option3', text: 'Option 3' }
-            ];
+            this.setAttribute('data-options', '[{"value":"","text":""}]');
+            return [{ value: '', text: '' }];
         }
         else {
             return this.#parseOptions(this.getAttribute('data-options'));
         };
-
     }
 
     #syncOptionsWithSelect() {
         if (!this.#dropdown) return;
-        this.#dropdown.innerHTML = (this.state.options
-            .map(option => `<option value="${option.value}">${option.text}</option>`)
-            .join('').replace(']', '').replace('[', ''));
+        
+        while (this.#dropdown.firstChild) {
+            this.#dropdown.removeChild(this.#dropdown.firstChild);
+        }
+        
+        this.state.options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            this.#dropdown.appendChild(option);
+        });
+
         this.#dropdown.value = this.state.value;
-
     }
-
     #handleTextInput(event = { target: this.#textbox }) {
         this.state.value = event.target.value;
         this.#announce(`Input updated to: ${this.state.value}`);
@@ -297,37 +294,173 @@ border-radius: 50%;
         t2.style.outline = 'initial';
         t2.style.boxShadow = 'initial';
     }
+      #lastClick = 0;
 
-    #lastClick = 0;
+    #showList = () => {
+        this.appliedpicker = HTMLSelectElement.prototype.showPicker.bind(this.#dropdown);
+        this.appliedpicker.call(this.#dropdown);
+      }
 
-    #showList = () => HTMLSelectElement.prototype.showPicker.bind(this.#dropdown);
+      #handleDblClick(e) {
+          this.#showList();
+      }
+      #contextMenu = {
+        isVisible: false,
+        element: null,
+        x: 0,
+        y: 0,
+        items: [],
+        
+        create() {
+            if (this.element) return;
+            
+            this.element = document.createElement('div');
+            this.element.style.position = 'fixed';
+            this.element.style.backgroundColor = '#fff';
+            this.element.style.border = '1px solid #ccc';
+            this.element.style.padding = '5px';
+            this.element.style.boxShadow = '2px 2px 5px rgba(0,0,0,0.2)';
+            this.element.style.zIndex = '1000';
+            this.element.style.display = 'none';
+        },
 
-    #handleDblClick(e = { target: this.#dropdown }) {
-        const now = Date.now();
-        const isDoubleClick = this.#lastClick && (now - this.#lastClick < 250);
-        this.#lastClick = now;
+        addItem(text, action, icon = '') {
+            const item = document.createElement('div');
+            item.className = 'context-menu-item';
+            item.style.padding = '5px 10px';
+            item.style.cursor = 'pointer';
+            item.style.userSelect = 'none';
+            
+            if (icon) {
+                const iconElement = document.createElement('span');
+                iconElement.className = icon;
+                item.appendChild(iconElement);
+            }
+            
+            item.appendChild(document.createTextNode(text));
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                action();
+                this.hide();
+            });
+            
+            item.addEventListener('mouseover', () => {
+                item.style.backgroundColor = '#f0f0f0';
+            });
+            
+            item.addEventListener('mouseout', () => {
+                item.style.backgroundColor = 'transparent';
+            });
+            
+            this.items.push(item);
+            if (this.element) {
+                this.element.appendChild(item);
+            }
+        },
 
-        if (isDoubleClick) {
-            try {
-                this.#dropdown.showPicker();
-            } catch {
-                try {
-                    this.#showList.call(this.#dropdown);
-                } catch {
-                    try {
-                        this.#dropdown.click();
-                    } catch {
-                        this.#dropdown.focus();
-                    }
+        show(x, y) {
+            if (!this.element) this.create();
+            
+            this.element.style.display = 'block';
+            this.element.style.left = `${x}px`;
+            this.element.style.top = `${y}px`;
+            this.isVisible = true;
+            
+            document.body.appendChild(this.element);
+            
+            // Ensure menu stays within viewport
+            const rect = this.element.getBoundingClientRect();
+            if (rect.right > window.innerWidth) {
+                this.element.style.left = `${window.innerWidth - rect.width}px`;
+            }
+            if (rect.bottom > window.innerHeight) {
+                this.element.style.top = `${window.innerHeight - rect.height}px`;
+            }
+        },
+
+        hide() {
+            if (this.element) {
+                this.element.style.display = 'none';
+                if (this.element.parentNode) {
+                    this.element.parentNode.removeChild(this.element);
                 }
             }
-            this.#lastClick = null;
-            return;
-        }
+            this.isVisible = false;
+        },
+
+        clear() {
+            this.items = [];
+            if (this.element) {
+                while (this.element.firstChild) {
+                    this.element.removeChild(this.element.firstChild);
+                }
+            }
+        },
+
+        destroy() {
+            this.clear();
+            if (this.element && this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
+            this.element = null;
+            this.isVisible = false;
+        },
+
+        bypass: (e) => {
+            // Ensure the default context menu appears by preventing the custom menu from being shown.
+            e.preventDefault();        
+            setTimeout(() => {
+                const nativeEvent = new MouseEvent("contextmenu", {
+                    ...e
+                });
+                e.target.dispatchEvent(nativeEvent);
+            }, 10);
+        },
+        isVisible: false
         
-        e.target.showPicker();
+    };
+
+    #handleRightClick(e) {
+        if (this.#contextMenu?.isVisible) {
+            this.#contextMenu.bypass(e);
+        }
+        e.preventDefault();
+        if (!this.#contextMenu.exists) {
+            this.#contextMenu.create();
+            
+            if (this.isDemo) {
+                const info = `
+HTML Attributes:\n    data-options:\n        value==text:\n            ="[a,b,c]"\n        becomes:\n            ="[{"value":"a","text":"a"},{"value":"b","text":"b"},{"value":"c","text":"c"}]"\n        value && text: \n            ="[a:1,b:2,c:3]"\n        becomes:\n            ='[{"value":"a","text":"1"},{"value":"b","text":"2"},{"value":"c","text":"3"}]'\n        also becomes:\n                ='[{"value":"a","text":"1"},{"value":"b","text":"2"},{"value":"c","text":"3"}]'\n    data-value:\n        the value property value of the selected option\n    data-placeholder:\n        the placeholder to display when value is '' or null`;
+                
+                this.#contextMenu.addItem('Show Info', () => alert(info));
+            }
+            
+            this.#contextMenu.addItem('Close', () => this.#contextMenu.hide());
+        }
+
+        this.#contextMenu.show(e.clientX, e.clientY);
+        this.#contextMenu.isVisible = true;
+        
+        // Add global click handler to hide menu
+        const hideHandler = (event) => {
+            if (!this.#contextMenu.element.contains(event.target)) {
+                this.#contextMenu.hide();
+                document.removeEventListener('click', hideHandler);
+                document.removeEventListener('contextmenu', hideHandler);
+            } else {
+                event.target.dispatchEvent(new PointerEvent('contextmenu', this.#contextMenu.bypass(),  { bubbles: true }));
+            }
+        };
+        
+        document.addEventListener('click', hideHandler);
+        document.addEventListener('contextmenu', hideHandler);
     }
 
+    removeContextMenu() {
+        if (this.#contextMenu) {
+            this.#contextMenu.destroy();
+        }
+    }
     #updateValue(value) {
         if (this.state.selectionMode === 'multiple') {
             if (Array.isArray(value)) {
@@ -485,14 +618,35 @@ border-radius: 50%;
     }
 
 
-    #setBrowserSpecificStyles() {
-        const thisBrowser = this.#determineBrowser();
+    #applyBrowserSpecificStyles(styles, browsername, what, these) {
+        let that = this;
+        const thisBrowser = browsername == null ? this.#determineBrowser() : browsername;
         const browserSpecificStyles = this.#browserSpecificStyleDefaults(thisBrowser);
-
-        for (const [property, value] of Object.entries(browserSpecificStyles)) {
-            this.style[property] = value;
-        }
+        if (this[what] != null) {
+            if (Array.from(this.#shadow.querySelector('*')).includes(this[what])) {
+                that = this[what];
+                this.#applyStyles(browserSpecificStyles, that, these);
+        }};
     }
+    applyBrowserStyles = (styles = {...Object.entries(this.styles)}, that = this, these = []) => {
+            if (that != null && these != null && Array.isArray(these)) {
+                these.push(that);
+            } else if (that != null){
+                these = [that];
+            } else {
+                these = [];
+            }
+            for (const [property, value] of Object.entries(styles)) {
+                element.style[property] = value;
+            }
+            if (these.length > 0) {
+                these.pop();
+                applyStyles(styles, these[0], these);
+            }
+            return these;
+    };
+
+
 
     static createComboInput = (() => { return document.createElement('combo-input'); })();
 
@@ -500,3 +654,5 @@ border-radius: 50%;
 
 customElements.define('combo-input', CustomSelectInput);
 document.body.appendChild(document.createElement('combo-input'));
+
+    
