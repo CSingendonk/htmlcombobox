@@ -1,3 +1,7 @@
+/**
+* @description Combo input element mixing selects with inputs 
+* authored by the person registered as the profile "CSingendonk" on github.com
+*/
 class CustomSelectInput extends HTMLElement {
     constructor() {
         super();
