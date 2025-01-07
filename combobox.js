@@ -657,6 +657,5 @@ HTML Attributes:\n    data-options:\n        value==text:\n            ="[a,b,c]
 }
 
 customElements.define('combo-input', CustomSelectInput);
-document.body.appendChild(document.createElement('combo-input'));
 
     
