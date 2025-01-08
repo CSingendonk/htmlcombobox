@@ -4,6 +4,11 @@
 * please give credit to the author if this is used in your code outside of CSingendonk's repos, forked, pulled, copied, etc, for any work that includes or is derived from this
 */
 class CustomSelectInput extends HTMLElement {
+        /**
+* @description Combo input element mixing selects with inputs 
+* authored by the person registered as the profile "CSingendonk" on github.com
+* please give credit to the author if this is used in your code outside of CSingendonk's repos, forked, pulled, copied, etc, for any work that includes or is derived from this
+*/
         constructor() {
             super();
             this.#shadow = this.attachShadow({ mode: 'closed' });
