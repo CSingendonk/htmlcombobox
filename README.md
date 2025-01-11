@@ -1,3 +1,5 @@
+![image](https://github.com/user-attachments/assets/dd3a6399-8903-4e76-9875-0455196c7379)
+![image](https://github.com/user-attachments/assets/f24c961c-3bb5-47de-af9e-47ebcc89e776)
 ```html
 <form id="aform">
     <combo-input name="comboinput" data-placeholder="Type or select" data-options=":'',value:text,valuetext></combo-input>
@@ -11,17 +13,12 @@
 
 #note: 
 - In order to use this like any text input inside of a form element,
--  the name="" attribute on the combo-input,
--   and the id="" attribute on the form containing it,
-- *MUST have a value*
-~  any value, but a value nonetheless.
+   the name="" attribute on the combo-input,
+   and the id="" attribute on the form containing it,
+  *MUST have a value*
+   any value, but a value nonetheless.
 - &lt;label&gt; optional.
 
 ```javascript
 CustomSelectInput.createComboInput());
 ```
-![image](https://github.com/user-attachments/assets/8c469692-e5db-429b-89b6-9ce9037bbe11)
-
-![image](https://github.com/user-attachments/assets/f24c961c-3bb5-47de-af9e-47ebcc89e776)
-
-![image](https://github.com/user-attachments/assets/723728de-e9c6-4426-9e02-aeb18cf8923e)
