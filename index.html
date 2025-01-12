@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Form Demo</title>
+    <script src="./integration.js"></script>
+    <style>
+        form {
+            max-width: fit-content;
+        }
+    </style>
+</head>
+<body> 
+    <h1>Advanced Form Demo</h1>
+    <h4>With combo-input elements</h2>
+
+    <form id="advanced-form" action="https://httpbin.org/post" method="POST" enctype="multipart/form-data" target="_blank">
+        <fieldset>
+            <legend>Personal Information</legend>
+            <div>
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" pattern="[A-Za-z\s]+" title="Please enter a valid name">
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email">
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Preferences</legend>
+            <div>
+                <label for="selection">Primary Choice:</label>
+                <combo-input 
+                    id="selection" 
+                    name="selection" 
+                    data-placeholder="Choose your primary option" 
+                    data-options=':,option1:Basic Plan,option2:Premium Plan,option3:Enterprise Plan'
+                    required>
+                </combo-input>
+            </div>
+            <div>
+                <label for="selectionb">Secondary Choice:</label>
+                <combo-input 
+                    id="selectionb" 
+                    name="selectionb" 
+                    data-placeholder="Choose your secondary option" 
+                    data-options='support:24/7 Support,training:Training Package,consulting:Consulting Hours'
+                    required>
+                </combo-input>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Additional Details</legend>
+            <div>
+                <label for="date">Preferred Start Date:</label>
+                <input type="date" id="date" name="date">
+            </div>
+            <div>
+                <label for="priority">Priority Level:</label>
+                <select id="priority" name="priority">
+                    <option value="">Select Priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div>
+                <label>Notification Preferences:</label>
+                <input type="checkbox" id="email-notify" name="notifications" value="email">
+                <label for="email-notify">Email</label>
+                <input type="checkbox" id="sms-notify" name="notifications" value="sms">
+                <label for="sms-notify">SMS</label>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Additional Comments</legend>
+            <textarea name="comments" rows="4" cols="50" maxlength="500" placeholder="Enter any additional comments here"></textarea>
+        </fieldset>
+
+        <div>
+            <button type="submit">Submit Form</button>
+            <button type="reset">Reset Form</button>
+        </div>
+    </form>
+    <output id="output"></output>
+</body>
+</html>
