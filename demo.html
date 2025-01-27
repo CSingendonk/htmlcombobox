@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta
+   name="viewport"
+   content="width=device-width, initial-scale=1.0"
+    >
+    <meta name="Author" content="CSingendonk" value="CSingendonk" />
+    <title>Advanced Form Demo</title>
+
+    <style>
+        form {
+            max-width: fit-content;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Form Demo</h1>
+    <form
+   id="advanced-form"
+   target=""
+   action="#"
+   method="POST"
+   enctype="multipart/form-data"
+   target="_blank"
+    >
+        <fieldset>
+            <legend>Personal Information</legend>
+            <div>
+                <label for="name">Full Name:</label>
+                <input
+               type="text"
+               id="name"
+               name="name"
+               pattern="[A-Za-z\s]+"
+               title="Please enter a valid name"
+                >
+            </div>
+            <div>
+                <label for="email">Email:</label>
+                <input
+               type="email"
+               id="email"
+               name="email"
+                >
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Preferences</legend>
+            <div>
+                <label for="selection">Primary Choice:</label>
+                <combo-input
+               id="selection"
+               name="selection"
+               data-placeholder="Choose your primary option"
+               data-options=':,option1:Basic Plan,option2:Premium Plan,option3:Enterprise Plan'
+                >
+                </combo-input>
+            </div>
+            <div>
+                <label for="selectionb">Secondary Choice:</label>
+                <combo-input
+               id="selectionb"
+               name="selectionb"
+               data-placeholder="Choose your secondary option"
+               data-options='support:24/7 Support,training:Training Package,consulting:Consulting Hours'
+                >
+                </combo-input>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <label>
+            <legend>Additional Details</legend>
+            <div>
+                <label for="date">Preferred Start Date:</label>
+                <input
+               type="date"
+               id="date"
+               name="date"
+                >
+            </div>
+            <div>
+                <label for="priority">Priority Level:</label>
+                <select
+               id="priority"
+               name="priority"
+                >
+                    <option value="">Select Priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div>
+                <legend>Notifications</legend>
+                <label>Email:
+                <input
+               type="checkbox"
+               id="email-notify"
+               name="emailnotifications"
+               value="email"
+                >
+                </label>
+                <label>SMS:
+                <input
+               type="checkbox"
+               id="sms-notify"
+               name="smsnotifications"
+               value="sms"
+                >
+                </label>
+                <label>Browser:
+                    <input
+                   type="checkbox"
+                   id="browser-notify"
+                   name="browsernotifications"
+                   value="browsernotify"
+                    >
+                </label>
+            </div>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Additional Comments</legend>
+            <textarea
+           name="comments"
+           rows="4"
+           cols="50"
+           maxlength="500"
+           placeholder="Enter any additional comments here"
+            ></textarea>
+        </fieldset>
+
+        <fieldset>
+            <legend>Action Buttons</legend>
+            <input type="submit">Submit Form</button>
+            <input type="reset">Reset Form</button>
+        </fieldset>
+    </form>
+    <output id="output">
+        <p>Form Submission Result:</p>
+        <pre id="result"></pre>
+        <script>
+            const form = document.getElementById('advanced-form');
+            const output = document.getElementById('output');
+            const result = document.getElementById('result');
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const formData = new FormData(form);
+                const formDataObject = {};
+                formData.forEach((value, key) => {
+                    formDataObject[key] = value;
+                });
+                result.textContent = JSON.stringify(formDataObject, null, 2);
+                output.style.display = 'block';
+            });
+        </script>
+
+    </output>
+        <script src="./integration.js"></script>
+</body>
+
+</html>
